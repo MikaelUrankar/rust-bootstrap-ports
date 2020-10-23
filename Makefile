@@ -145,4 +145,9 @@ do-build:
 		${SETENV} ${MAKE_ENV} ${PYTHON_CMD} x.py dist --jobs=${MAKE_JOBS_NUMBER} \
 		cargo src/librustc library/std
 
+do-install:
+	@${MKDIR} ${STAGEDIR}${PREFIX}/rust-bootstrap
+	${INSTALL_DATA} ${WRKSRC}/build/dist/*-unknown-${OPSYS:tl}${EXTRACT_SUFX} \
+                ${STAGEDIR}${PREFIX}/rust-bootstrap/
+
 .include <bsd.port.mk>
