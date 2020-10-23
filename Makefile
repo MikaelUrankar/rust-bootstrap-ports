@@ -50,19 +50,19 @@ EXTRA_PATCHES+=	${PATCHDIR}/powerpc64-elfv2 \
 		${PATCHDIR}/powerpc64le
 
 # no need to extract the full sysroot
-EXTRACT_AFTER_ARGS+=	--include "./lib" --include "./usr/include" --include "./usr/lib"
+TAR_ARGS=	--include "./lib" --include "./usr/include" --include "./usr/lib" ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS}
 
 post-extract:
 .for _RUST_TARGET in aarch64-unknown-freebsd armv6-unknown-freebsd armv7-unknown-freebsd i686-unknown-freebsd powerpc64-unknown-freebsd powerpc64le-unknown-freebsd x86_64-unknown-freebsd
 	${MKDIR} ${WRKDIR}/${_RUST_TARGET}
 .endfor
-	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-11.3-RELEASE-amd64.tar.xz -C ${WRKDIR}/x86_64-unknown-freebsd
-	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-11.3-RELEASE-arm64.tar.xz -C ${WRKDIR}/aarch64-unknown-freebsd
-	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-11.3-RELEASE-arm-armv6.tar.xz -C ${WRKDIR}/armv6-unknown-freebsd
-	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-12.1-RELEASE-arm-armv7.tar.xz -C ${WRKDIR}/armv7-unknown-freebsd
-	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-11.3-RELEASE-i386.tar.xz -C ${WRKDIR}/i686-unknown-freebsd
-	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-13.0-CURRENT-powerpc64-elfv2.tar.xz -C ${WRKDIR}/powerpc64-unknown-freebsd
-	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-13.0-CURRENT-powerpc64le.tar.xz -C ${WRKDIR}/powerpc64le-unknown-freebsd
+	${TAR} ${TAR_ARGS} ${DISTDIR}/FreeBSD-11.4-RELEASE-amd64.tar.xz -C ${WRKDIR}/x86_64-unknown-freebsd
+	${TAR} ${TAR_ARGS} ${DISTDIR}/FreeBSD-11.4-RELEASE-arm64.tar.xz -C ${WRKDIR}/aarch64-unknown-freebsd
+	${TAR} ${TAR_ARGS} ${DISTDIR}/FreeBSD-11.4-RELEASE-arm-armv6.tar.xz -C ${WRKDIR}/armv6-unknown-freebsd
+	${TAR} ${TAR_ARGS} ${DISTDIR}/FreeBSD-12.1-RELEASE-arm-armv7.tar.xz -C ${WRKDIR}/armv7-unknown-freebsd
+	${TAR} ${TAR_ARGS} ${DISTDIR}/FreeBSD-11.4-RELEASE-i386.tar.xz -C ${WRKDIR}/i686-unknown-freebsd
+	${TAR} ${TAR_ARGS} ${DISTDIR}/FreeBSD-13.0-CURRENT-powerpc64-elfv2.tar.xz -C ${WRKDIR}/powerpc64-unknown-freebsd
+	${TAR} ${TAR_ARGS} ${DISTDIR}/FreeBSD-13.0-CURRENT-powerpc64le.tar.xz -C ${WRKDIR}/powerpc64le-unknown-freebsd
 
 post-patch:
 # Disable vendor checksums
@@ -134,6 +134,7 @@ do-configure:
 	@${CHMOD} +x ${WRKDIR}/${_RUST_TARGET}-c*
 # sanity check cross compilers.  we cannot execute the result but
 # at least check that it can link a simple program before going further.
+	@${ECHO} "Testing ${_RUST_TARGET} cross-compiler"
 	@${PRINTF} '#include <stdio.h>\nint main(){return printf("hello\\n");}' | ${WRKDIR}/${_RUST_TARGET}-cc -o ${WRKDIR}/test-c -xc -
 # produce some useful info for the build logs like what release/arch test-c is compiled for
 	@cd ${WRKDIR} && ${FILE} test-c && ${READELF} -A test-c
