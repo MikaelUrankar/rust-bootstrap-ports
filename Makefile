@@ -2,8 +2,7 @@ PORTNAME=	rust
 PORTVERSION=	1.47.0
 CATEGORIES=	lang
 MASTER_SITES=	https://static.rust-lang.org/dist/:rust \
-		LOCAL/tobik:armbase \
-		LOCAL/tobik:base \
+		LOCAL/mikael:armbase \
 		https://download.freebsd.org/ftp/releases/amd64/11.4-RELEASE/base.txz?dummy=/:base_amd64 \
 		https://download.freebsd.org/ftp/releases/arm64/11.4-RELEASE/base.txz?dummy=/:base_aarch64 \
 		https://download.freebsd.org/ftp/releases/i386/11.4-RELEASE/base.txz?dummy=/:base_i386 \
