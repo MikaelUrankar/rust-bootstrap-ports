@@ -4,6 +4,7 @@ CATEGORIES=	lang
 MASTER_SITES=	https://static.rust-lang.org/dist/:rust \
 		LOCAL/tobik:armbase \
 		LOCAL/tobik:base \
+		https://download.freebsd.org/ftp/releases/amd64/11.3-RELEASE/base.txz?dummy=/:base_amd64 \
 		https://download.freebsd.org/ftp/releases/arm64/11.3-RELEASE/base.txz?dummy=/:base_aarch64 \
 		https://download.freebsd.org/ftp/releases/i386/11.3-RELEASE/base.txz?dummy=/:base_i386 \
 		https://download.freebsd.org/ftp/snapshots/powerpc/powerpc64/13.0-CURRENT/base.txz?dummy=/:base_powerpc64_elfv2 \
@@ -12,6 +13,7 @@ MASTER_SITES=	https://static.rust-lang.org/dist/:rust \
 PKGNAMESUFFIX=	-bootstrap
 DISTNAME=	${PORTNAME}c-${PORTVERSION}-src
 DISTFILES=	rust/${DISTNAME}${EXTRACT_SUFX}:rust \
+		FreeBSD-11.3-RELEASE-amd64${EXTRACT_SUFX}:base_amd64 \
 		FreeBSD-11.3-RELEASE-arm64${EXTRACT_SUFX}:base_aarch64 \
 		FreeBSD-11.3-RELEASE-arm-armv6${EXTRACT_SUFX}:armbase \
 		FreeBSD-12.1-RELEASE-arm-armv7${EXTRACT_SUFX}:armbase \
@@ -20,8 +22,6 @@ DISTFILES=	rust/${DISTNAME}${EXTRACT_SUFX}:rust \
 		FreeBSD-13.0-CURRENT-powerpc64le${EXTRACT_SUFX}:base_powerpc64le
 EXTRACT_ONLY=	rust/rustc-${PORTVERSION}-src.tar.xz
 
-		#https://download.freebsd.org/ftp/releases/amd64/11.3-RELEASE/base.txz?dummy=/:base_amd64 \
-		#FreeBSD-11.3-RELEASE-amd64${EXTRACT_SUFX}:base_amd64 \
 
 MAINTAINER=	rust@FreeBSD.org
 COMMENT=	Create bootstrap compilers for building lang/rust
@@ -54,9 +54,10 @@ EXTRA_PATCHES+=	${PATCHDIR}/powerpc64-elfv2 \
 		${PATCHDIR}/powerpc64le
 
 post-extract:
-.for _RUST_TARGET in aarch64-unknown-freebsd armv6-unknown-freebsd armv7-unknown-freebsd i686-unknown-freebsd powerpc64-unknown-freebsd powerpc64le-unknown-freebsd
+.for _RUST_TARGET in aarch64-unknown-freebsd armv6-unknown-freebsd armv7-unknown-freebsd i686-unknown-freebsd powerpc64-unknown-freebsd powerpc64le-unknown-freebsd x86_64-unknown-freebsd
 	${MKDIR} ${WRKDIR}/${_RUST_TARGET}
 .endfor
+	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-11.3-RELEASE-amd64.tar.xz -C ${WRKDIR}/x86_64-unknown-freebsd
 	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-11.3-RELEASE-arm64.tar.xz -C ${WRKDIR}/aarch64-unknown-freebsd
 	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-11.3-RELEASE-arm-armv6.tar.xz -C ${WRKDIR}/armv6-unknown-freebsd
 	${TAR} ${EXTRACT_AFTER_ARGS} ${EXTRACT_BEFORE_ARGS} ${DISTDIR}/FreeBSD-12.1-RELEASE-arm-armv7.tar.xz -C ${WRKDIR}/armv7-unknown-freebsd
@@ -84,8 +85,7 @@ do-configure:
 	@${ECHO_CMD} 'rustc="${LOCALBASE}/bin/rustc"' >> ${WRKSRC}/config.toml
 
 	@${ECHO_CMD} 'host=["aarch64-unknown-freebsd", "armv6-unknown-freebsd", "armv7-unknown-freebsd", "i686-unknown-freebsd", "powerpc64-unknown-freebsd", "powerpc64le-unknown-freebsd", "x86_64-unknown-freebsd"]' >> ${WRKSRC}/config.toml
-# We're building on amd64, we cross compile for these arches
-.for _RUST_TARGET in aarch64-unknown-freebsd armv6-unknown-freebsd armv7-unknown-freebsd i686-unknown-freebsd powerpc64-unknown-freebsd powerpc64le-unknown-freebsd
+.for _RUST_TARGET in aarch64-unknown-freebsd armv6-unknown-freebsd armv7-unknown-freebsd i686-unknown-freebsd powerpc64-unknown-freebsd powerpc64le-unknown-freebsd x86_64-unknown-freebsd
 	@${ECHO_CMD} 'target=["${_RUST_TARGET}"]' >> ${WRKSRC}/config.toml
 .endfor
 	@${ECHO_CMD} '[rust]' >> ${WRKSRC}/config.toml
@@ -101,7 +101,7 @@ do-configure:
 .endif
 # https://github.com/rust-lang/rust/pull/72696#issuecomment-641517185
 	@${ECHO_CMD} 'ldflags="-lz"' >> ${WRKSRC}/config.toml
-.for _RUST_TARGET in aarch64-unknown-freebsd armv6-unknown-freebsd armv7-unknown-freebsd i686-unknown-freebsd powerpc64-unknown-freebsd powerpc64le-unknown-freebsd
+.for _RUST_TARGET in aarch64-unknown-freebsd armv6-unknown-freebsd armv7-unknown-freebsd i686-unknown-freebsd powerpc64-unknown-freebsd powerpc64le-unknown-freebsd x86_64-unknown-freebsd
 	@${ECHO_CMD} '[target.${_RUST_TARGET}]' >> ${WRKSRC}/config.toml
 	@${ECHO_CMD} 'cc="${WRKDIR}/${_RUST_TARGET}-cc"' >> ${WRKSRC}/config.toml
 	@${ECHO_CMD} 'cxx="${WRKDIR}/${_RUST_TARGET}-c++"' >> ${WRKSRC}/config.toml
@@ -117,17 +117,21 @@ do-configure:
 	@${ECHO_CMD} 'linker="${CC}"' >> ${WRKSRC}/config.toml
 	@${ECHO_CMD} '[dist]' >> ${WRKSRC}/config.toml
 	@${ECHO_CMD} 'src-tarball=false' >> ${WRKSRC}/config.toml
-.for _RUST_TARGET in aarch64-unknown-freebsd armv6-unknown-freebsd armv7-unknown-freebsd i686-unknown-freebsd powerpc64-unknown-freebsd powerpc64le-unknown-freebsd
+.for _RUST_TARGET in aarch64-unknown-freebsd armv6-unknown-freebsd armv7-unknown-freebsd i686-unknown-freebsd powerpc64-unknown-freebsd powerpc64le-unknown-freebsd x86_64-unknown-freebsd
 .if ${_RUST_TARGET} == powerpc64-unknown-freebsd
 	@${PRINTF} '#!/bin/sh\nexec ${CC} --sysroot=${WRKDIR}/${_RUST_TARGET} -mabi=elfv2 --target=${_RUST_TARGET} "$$@"\n' \
 		> ${WRKDIR}/${_RUST_TARGET}-cc
 	@${PRINTF} '#!/bin/sh\nexec ${CXX} --sysroot=${WRKDIR}/${_RUST_TARGET} -mabi=elfv2 --target=${_RUST_TARGET} -stdlib=libc++ "$$@"\n' \
 		> ${WRKDIR}/${_RUST_TARGET}-c++
-.elif ${_RUST_TARGET} == armv6-gnueabihf-freebsd || ${_RUST_TARGET} == armv7-gnueabihf-freebsd
-.else
+.elif ${_RUST_TARGET} == armv6-unknown-freebsd || ${_RUST_TARGET} == armv7-unknown-freebsd
 	@${PRINTF} '#!/bin/sh\nexec ${CC} --sysroot=${WRKDIR}/${_RUST_TARGET} --target=${_RUST_TARGET:S/unknown/gnueabihf/} "$$@"\n' \
 		> ${WRKDIR}/${_RUST_TARGET}-cc
 	@${PRINTF} '#!/bin/sh\nexec ${CXX} --sysroot=${WRKDIR}/${_RUST_TARGET} --target=${_RUST_TARGET:S/unknown/gnueabihf/} -stdlib=libc++ "$$@"\n' \
+		> ${WRKDIR}/${_RUST_TARGET}-c++
+.else
+	@${PRINTF} '#!/bin/sh\nexec ${CC} --sysroot=${WRKDIR}/${_RUST_TARGET} --target=${_RUST_TARGET} "$$@"\n' \
+		> ${WRKDIR}/${_RUST_TARGET}-cc
+	@${PRINTF} '#!/bin/sh\nexec ${CXX} --sysroot=${WRKDIR}/${_RUST_TARGET} --target=${_RUST_TARGET} -stdlib=libc++ "$$@"\n' \
 		> ${WRKDIR}/${_RUST_TARGET}-c++
 .endif
 	@${CHMOD} +x ${WRKDIR}/${_RUST_TARGET}-c*
